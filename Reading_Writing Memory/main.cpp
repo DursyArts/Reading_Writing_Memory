@@ -21,20 +21,33 @@ struct Values {
 int main()
 {
 	DWORD pid;
-	mem.GetPID(L"csgo.exe", &pid);
-	mem.Open(pid, SlimUtils::ProcessAccess::Full);
-	auto mod = mem.GetModule(L"client_panorama.dll");
-	//std::cout << mod << std::endl;
-	V.localPlayer = mem.Read<DWORD>(O.dwLocalPlayer);
+	SlimUtils::SlimMem m_Memory;
+	DWORD m_dwClientDll;
 
+	mem.GetPID(L"csgo.exe", &pid);
+	std::cout << "pid: " << pid << std::endl;
+	mem.Open(pid, SlimUtils::ProcessAccess::Full);
+	
+
+	const SlimUtils::SlimModule *mod;
+	mod = mem.GetModule(L"client_panorama.dll");
+	m_dwClientDll = mod->ptrBase;
+	std::cout << m_dwClientDll << std::endl;
+
+
+
+	Sleep(5000);
+	V.localPlayer = mem.Read<DWORD>(O.dwLocalPlayer);
+	std::cout << V.localPlayer << std::endl;
 	while (true)
 	{
 		V.flag = mem.Read<BYTE>(O.dwLocalPlayer + O.m_fFlags);
 		if (GetAsyncKeyState(VK_SPACE) && O.m_fFlags & (1 << 0)) // if on ground then jump
 		{
 			
-			//mem.Write<DWORD>(mod + O.dwForceJump, 6); 
+			mem.Write<DWORD>(O.dwForceJump, 6); 
 		}
+		Sleep(1);
 	}
 	return 0;
 }
