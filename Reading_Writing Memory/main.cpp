@@ -16,10 +16,8 @@ struct Offset {
 struct Values {
 	DWORD localPlayer;
 	DWORD gameModule;
-	DWORD mod;
 	BYTE flag;
 }V;
-
 bool GetMod()
 {
 	if (!mem.HasProcessHandle())
@@ -33,23 +31,27 @@ bool GetMod()
 		mem.ParseModules();
 		return false;
 	}
-		
+	std::cout << mod << std::endl;
 	V.gameModule = mod->ptrBase;
-
+	
 	return true;
 }
+
 bool GetPlayer()
 {
 	V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
-	
 
-	if (V.localPlayer = NULL) {
+
+	if (V.localPlayer == NULL) {
 		V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
 		//std::cout << V.localPlayer << std::endl;
 		return false;
 	}
 	return true;
+	
 }
+
+
 
 void bhop()
 {
@@ -58,27 +60,21 @@ void bhop()
 
 int main()
 {
-	
-
 	mem.GetPID(L"csgo.exe", &pid);
 	if (pid == NULL) {
 		return false;
 	}
 	std::cout << "pid: " << pid << std::endl;
-
-	if (mem.Open(pid, SlimUtils::ProcessAccess::Full) == NULL)
-	{
-		return false;
-	}
-	
+	Sleep(500);
+	mem.Open(pid, SlimUtils::ProcessAccess::Full);
 	GetMod();
-	GetPlayer();
+	//std::cout << m_dwClientDll << std::endl << V.localPlayer << std::endl;
 
-	std::cout << "player found" << V.localPlayer << std::endl;
-
+	
 	while (true)
 	{
 		GetPlayer();
+		//std::cout << "player found" << V.localPlayer << std::endl;
 		V.flag = mem.Read<BYTE>(V.localPlayer + O.m_fFlags);
 		//std::cout << V.flag << std::endl;
 		if (GetAsyncKeyState(VK_SPACE) && V.flag & (1 << 0)) // if on ground then jump
