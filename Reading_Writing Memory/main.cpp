@@ -20,13 +20,12 @@ struct Values {
 	BYTE flag;
 }V;
 
-
 bool GetMod()
 {
 	if (!mem.HasProcessHandle())
-		std::cout << "." << std::endl;
+		return false;
 	if (!mem.ParseModules())
-		std::cout << "." << std::endl;
+		return false;
 
 	const SlimUtils::SlimModule *mod;
 	if ((mod = mem.GetModule(L"client_panorama.dll")) == nullptr)
@@ -39,23 +38,22 @@ bool GetMod()
 
 	return true;
 }
-void getPlayer()
+bool GetPlayer()
 {
-	// deleted, will be used later
+	V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
+	
+
+	if (V.localPlayer = NULL) {
+		V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
+		//std::cout << V.localPlayer << std::endl;
+		return false;
+	}
+	return true;
 }
 
 void bhop()
 {
-	while (true)
-	{
-		V.flag = mem.Read<BYTE>(V.localPlayer + O.m_fFlags);
-		std::cout << V.flag << std::endl;
-		if (GetAsyncKeyState(VK_SPACE) && V.flag & (1 << 0)) // if on ground then jump
-		{
-
-			mem.Write<DWORD>(V.gameModule + O.dwForceJump, 6);
-		}
-	}
+	
 }
 
 int main()
@@ -74,19 +72,23 @@ int main()
 	}
 	
 	GetMod();
-	
-	V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
+	GetPlayer();
 
-	while (V.localPlayer == NULL)
+	std::cout << "player found" << V.localPlayer << std::endl;
+
+	while (true)
 	{
-		V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
-		//std::cout << V.localPlayer << std::endl;
+		GetPlayer();
+		V.flag = mem.Read<BYTE>(V.localPlayer + O.m_fFlags);
+		//std::cout << V.flag << std::endl;
+		if (GetAsyncKeyState(VK_SPACE) && V.flag & (1 << 0)) // if on ground then jump
+		{
+			mem.Write<DWORD>(V.gameModule + O.dwForceJump, 6);
+		}
 	}
 	
-	std::thread bhop(bhop);
 	std::cout << "test";
 
-	
 	
 	
 	return 0;
