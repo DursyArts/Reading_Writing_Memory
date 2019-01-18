@@ -17,7 +17,7 @@ namespace SlimUtils {
 	void SlimMem::Close()
 	{
 		m_mModules.clear();
-
+		
 		//Close the handle to the process in case it's still open
 		if (IsProcessHandleValid(m_hProc)) {
 			ProperlyCloseHandle(m_hProc);

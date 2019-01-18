@@ -1,11 +1,12 @@
 ﻿#include <iostream>
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <thread>
 #include "SlimMem.h"
 
 SlimUtils::SlimMem mem;
-
-
+DWORD pid;
+DWORD m_dwClientDll;
 
 struct Offset {
 	DWORD dwLocalPlayer = 0xCBD6A4;
@@ -14,40 +15,80 @@ struct Offset {
 }O;
 struct Values {
 	DWORD localPlayer;
+	DWORD gameModule;
 	DWORD mod;
 	BYTE flag;
 }V;
 
-int main()
-{
-	DWORD pid;
-	SlimUtils::SlimMem m_Memory;
-	DWORD m_dwClientDll;
 
-	mem.GetPID(L"csgo.exe", &pid);
-	std::cout << "pid: " << pid << std::endl;
-	mem.Open(pid, SlimUtils::ProcessAccess::Full);
-	
+bool GetMod()
+{
+	if (!mem.HasProcessHandle())
+		std::cout << "." << std::endl;
+	if (!mem.ParseModules())
+		std::cout << "." << std::endl;
 
 	const SlimUtils::SlimModule *mod;
-	mod = mem.GetModule(L"client_panorama.dll");
-	m_dwClientDll = mod->ptrBase;
-	std::cout << m_dwClientDll << std::endl;
+	if ((mod = mem.GetModule(L"client_panorama.dll")) == nullptr)
+	{
+		mem.ParseModules();
+		return false;
+	}
+		
+	V.gameModule = mod->ptrBase;
 
+	return true;
+}
+void getPlayer()
+{
+	// deleted, will be used later
+}
 
-
-	Sleep(5000);
-	V.localPlayer = mem.Read<DWORD>(O.dwLocalPlayer);
-	std::cout << V.localPlayer << std::endl;
+void bhop()
+{
 	while (true)
 	{
-		V.flag = mem.Read<BYTE>(O.dwLocalPlayer + O.m_fFlags);
-		if (GetAsyncKeyState(VK_SPACE) && O.m_fFlags & (1 << 0)) // if on ground then jump
+		V.flag = mem.Read<BYTE>(V.localPlayer + O.m_fFlags);
+		std::cout << V.flag << std::endl;
+		if (GetAsyncKeyState(VK_SPACE) && V.flag & (1 << 0)) // if on ground then jump
 		{
-			
-			mem.Write<DWORD>(O.dwForceJump, 6); 
+
+			mem.Write<DWORD>(V.gameModule + O.dwForceJump, 6);
 		}
-		Sleep(1);
 	}
+}
+
+int main()
+{
+	
+
+	mem.GetPID(L"csgo.exe", &pid);
+	if (pid == NULL) {
+		return false;
+	}
+	std::cout << "pid: " << pid << std::endl;
+
+	if (mem.Open(pid, SlimUtils::ProcessAccess::Full) == NULL)
+	{
+		return false;
+	}
+	
+	GetMod();
+	
+	V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
+
+	while (V.localPlayer == NULL)
+	{
+		V.localPlayer = mem.Read<DWORD>(V.gameModule + O.dwLocalPlayer);
+		//std::cout << V.localPlayer << std::endl;
+	}
+	
+	std::thread bhop(bhop);
+	std::cout << "test";
+
+	
+	
+	
 	return 0;
 }
+
